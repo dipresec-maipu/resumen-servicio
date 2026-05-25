@@ -1,22 +1,37 @@
 const $ = (id) => document.getElementById(id);
 
+// Si quieres que los encargados no vean configuración, pega aquí la URL final del Web App.
+// También se puede guardar desde el botón "Configuración técnica" de la página.
+const DEFAULT_API_URL = 'https://script.google.com/macros/s/AKfycbyCpDXuSviRGT6nZlxYM_jD9jfGrqjBVDKceZOQye4DTOHVU_1EzJ_ivdCs5PNKVLQj/exec';
+
 const TIPOS = [
   'Distribución de cuadrante',
-  'Plan Colegio',
   'Servicio con Carabineros',
+  'Plan Colegio',
   'Patrullaje preventivo solicitado',
   'Vigilancia especial',
   'Punto fijo / breve punto fijo',
+  'Copamiento / actividad especial',
   'Fiscalización',
   'Recuperación de espacio público',
+  'Móviles operativos',
   'Servicio extraordinario',
   'Novedad de personal',
   'Observación general'
 ];
 
+const TIPOS_RAPIDOS = [
+  'Servicio con Carabineros',
+  'Plan Colegio',
+  'Vigilancia especial',
+  'Copamiento / actividad especial',
+  'Móviles operativos',
+  'Novedad de personal'
+];
+
 const CUADRANTES = [
   '215', '215-A', '215-B', '215-C',
-  '216', '217', '218', '219', '220', '221', '222', '223',
+  '216', '217', '218', '219', '220', '221', '222', '223', '223-A', '223-B',
   'Todos', 'No aplica'
 ];
 
@@ -28,10 +43,11 @@ const MODALIDADES = [
   'Punto fijo',
   'Breve punto fijo',
   'Medidas cautelares',
-  'Patrulla mixta',
+  'Patrulla mixta apoyo a cuadrante',
   'Plan Colegio',
   'Fiscalización',
   'Recuperación de espacio público',
+  'Copamiento',
   'Otro'
 ];
 
@@ -65,14 +81,15 @@ function init() {
   fillSelect('modalidad', MODALIDADES);
   fillSelect('comisaria', COMISARIAS);
   fillSelect('tipo_novedad', NOVEDADES);
+  renderQuickTypes();
 
   const today = new Date().toISOString().slice(0, 10);
   $('fecha').value = localStorage.getItem('rs_fecha') || today;
   $('turno').value = localStorage.getItem('rs_turno') || '1° turno';
   $('encargado').value = localStorage.getItem('rs_encargado') || '';
-  $('apiUrl').value = localStorage.getItem('rs_apiUrl') || '';
-  $('apiToken').value = localStorage.getItem('rs_apiToken') || '';
+  $('apiUrl').value = localStorage.getItem('rs_apiUrl') || DEFAULT_API_URL;
 
+  $('btnConfig').addEventListener('click', () => $('configBox').classList.toggle('hidden'));
   $('btnSaveConfig').addEventListener('click', saveConfig);
   $('btnGuardar').addEventListener('click', guardarRegistro);
   $('btnCargar').addEventListener('click', cargarRegistros);
@@ -81,25 +98,102 @@ function init() {
   $('btnWhatsapp').addEventListener('click', abrirWhatsapp);
   $('btnOutlook').addEventListener('click', abrirOutlook);
   $('btnLimpiar').addEventListener('click', limpiarFormulario);
+  $('tipo_registro').addEventListener('change', aplicarTipoSeleccionado);
 
   ['fecha', 'turno', 'encargado'].forEach(id => {
     $(id).addEventListener('change', () => {
       localStorage.setItem('rs_' + id, $(id).value);
     });
   });
+
+  aplicarTipoSeleccionado();
+}
+
+function renderQuickTypes() {
+  const box = $('quickTypes');
+  box.innerHTML = TIPOS_RAPIDOS.map(t => `<button type="button" class="chip" data-tipo="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
+  box.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      $('tipo_registro').value = btn.dataset.tipo;
+      aplicarTipoSeleccionado();
+      $('funcionario').focus();
+    });
+  });
+}
+
+function aplicarTipoSeleccionado() {
+  const tipo = $('tipo_registro').value;
+
+  const defaults = {
+    'Distribución de cuadrante': { modalidad: 'No aplica', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Servicio con Carabineros': { modalidad: 'Medidas cautelares', lugar: '', comisaria: '25° Comisaría', novedad: 'No aplica' },
+    'Plan Colegio': { modalidad: 'Plan Colegio', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Patrullaje preventivo solicitado': { modalidad: 'Patrullaje preventivo', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Vigilancia especial': { modalidad: 'Breve punto fijo', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Punto fijo / breve punto fijo': { modalidad: 'Breve punto fijo', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Copamiento / actividad especial': { modalidad: 'Copamiento', lugar: 'Servicio copamiento', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Fiscalización': { modalidad: 'Fiscalización', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Recuperación de espacio público': { modalidad: 'Recuperación de espacio público', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Móviles operativos': { modalidad: 'No aplica', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Servicio extraordinario': { modalidad: 'Otro', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' },
+    'Novedad de personal': { modalidad: 'No aplica', lugar: '', comisaria: 'No aplica', novedad: 'Licencia médica' },
+    'Observación general': { modalidad: 'No aplica', lugar: '', comisaria: 'No aplica', novedad: 'No aplica' }
+  };
+
+  const d = defaults[tipo] || defaults['Distribución de cuadrante'];
+  $('modalidad').value = d.modalidad;
+  $('comisaria').value = d.comisaria;
+  $('tipo_novedad').value = d.novedad;
+  if (d.lugar && !$('lugar').value) $('lugar').value = d.lugar;
+
+  setPlaceholderByTipo(tipo);
+}
+
+function setPlaceholderByTipo(tipo) {
+  const obs = $('observacion');
+  const lugar = $('lugar');
+  const direccion = $('direccion');
+
+  if (tipo === 'Servicio con Carabineros') {
+    lugar.placeholder = 'Ej.: Medidas cautelares / Patrulla mixta apoyo a cuadrante';
+    direccion.placeholder = 'Jurisdicción o sector, si aplica';
+    obs.placeholder = 'Ej.: servicio de medidas cautelares y órdenes judiciales';
+  } else if (tipo === 'Plan Colegio') {
+    lugar.placeholder = 'Ej.: Colegio Reina de Suecia';
+    direccion.placeholder = 'Ej.: Av. Arq. Hugo Bravo #1677';
+    obs.placeholder = 'Observación opcional';
+  } else if (tipo === 'Vigilancia especial' || tipo === 'Punto fijo / breve punto fijo') {
+    lugar.placeholder = 'Ej.: Jardín Infantil El Despertar';
+    direccion.placeholder = 'Ej.: Asunción #1441';
+    obs.placeholder = 'Ej.: vigilancia con breve punto fijo por desalojo de campamento';
+  } else if (tipo === 'Copamiento / actividad especial') {
+    lugar.placeholder = 'Ej.: Servicio copamiento Feria El Descanso';
+    direccion.placeholder = 'Ej.: Av. El Descanso entre Longitudinal y Gustavo Eiffel';
+    obs.placeholder = 'Ej.: con relevo en el lugar';
+  } else if (tipo === 'Móviles operativos') {
+    lugar.placeholder = 'Opcional';
+    direccion.placeholder = 'Opcional';
+    obs.placeholder = 'Ej.: cobertura todos los cuadrantes / cuadrante 219/220';
+  } else if (tipo === 'Novedad de personal') {
+    lugar.placeholder = 'No aplica';
+    direccion.placeholder = 'No aplica';
+    obs.placeholder = 'Ej.: funcionario con licencia médica';
+  } else {
+    lugar.placeholder = 'Lugar, servicio o punto';
+    direccion.placeholder = 'Dirección o intersección';
+    obs.placeholder = 'Detalle breve del servicio, motivo o novedad';
+  }
 }
 
 function saveConfig() {
   localStorage.setItem('rs_apiUrl', $('apiUrl').value.trim());
-  localStorage.setItem('rs_apiToken', $('apiToken').value.trim());
-  setStatus('Configuración guardada.', true);
+  setStatus('URL guardada.', true);
 }
 
 function getConfig() {
-  const apiUrl = $('apiUrl').value.trim();
-  const token = $('apiToken').value.trim();
-  if (!apiUrl || !token) throw new Error('Debes ingresar la URL de Apps Script y el token.');
-  return { apiUrl, token };
+  const apiUrl = ($('apiUrl').value.trim() || DEFAULT_API_URL).trim();
+  if (!apiUrl) throw new Error('Falta configurar la URL de Apps Script.');
+  return { apiUrl };
 }
 
 function getTurnoBase() {
@@ -136,11 +230,11 @@ function getRegistro() {
 
 async function guardarRegistro() {
   try {
-    setStatus('Guardando registro...', true);
+    setStatus('Guardando servicio...', true);
     const registro = getRegistro();
     const res = await callApi('guardarRegistro', { registro });
     if (!res.ok) throw new Error(res.error || 'No se pudo guardar.');
-    setStatus('Registro guardado correctamente.', true);
+    setStatus('Servicio guardado correctamente.', true);
     limpiarFormulario(false);
     await cargarRegistros();
   } catch (err) {
@@ -197,6 +291,7 @@ function limpiarFormulario(clearStatus = true) {
   $('modalidad').value = 'No aplica';
   $('comisaria').value = 'No aplica';
   $('tipo_novedad').value = 'No aplica';
+  aplicarTipoSeleccionado();
   if (clearStatus) setStatus('Formulario limpio.', true);
 }
 
@@ -224,8 +319,8 @@ function abrirOutlook() {
 }
 
 function callApi(action, data) {
-  const { apiUrl, token } = getConfig();
-  const payload = { ...data, action, token };
+  const { apiUrl } = getConfig();
+  const payload = { ...data, action };
   return jsonp(apiUrl, payload);
 }
 

@@ -182,3 +182,41 @@ tr:last-child td { border-bottom: none; }
   .config-card, .turno-card { grid-column: 1 / -1; }
   .grid-3 { grid-template-columns: 1fr; }
 }
+
+.full-width { grid-column: 1 / -1; }
+.hidden { display: none !important; }
+.hint { margin: 4px 0 0; color: #64748b; font-size: 13px; }
+.ghost {
+  background: #eef2ff;
+  color: var(--azul);
+  border: 1px solid var(--borde);
+}
+.config-inline {
+  border: 1px dashed var(--borde);
+  border-radius: 12px;
+  padding: 12px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+  background: #fafafa;
+}
+.quick-types {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+.chip {
+  background: #eef2ff;
+  color: var(--azul);
+  border: 1px solid var(--borde);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.chip:hover { background: #e0e7ff; }
+
+@media (max-width: 900px) {
+  .config-inline { grid-template-columns: 1fr; }
+}

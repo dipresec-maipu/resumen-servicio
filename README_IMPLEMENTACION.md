@@ -1,51 +1,43 @@
-# Resumen de Servicio DIPRESEC
+# Resumen de Servicio DIPRESEC - versión sin token
 
-Sistema piloto con:
+Esta versión elimina el campo Token para que el sistema sea más rápido e intuitivo para los encargados de servicio.
 
-- GitHub Pages: interfaz web.
-- Google Apps Script: backend/API.
-- Google Sheets: base de datos.
-- WhatsApp: link con texto precargado.
-- Outlook: abre correo institucional con asunto y cuerpo precargado.
+## Componentes
 
-## 1. Crear Google Sheet
+- `index.html`: interfaz web para GitHub Pages.
+- `styles.css`: estilos visuales.
+- `script.js`: lógica del navegador. Incluye la URL del Apps Script en la constante `DEFAULT_API_URL`.
+- `Code.gs`: backend en Google Apps Script.
 
-1. Crear una planilla llamada `Resumen Servicio DIPRESEC`.
-2. Ir a Extensiones → Apps Script.
-3. Pegar el contenido de `Code.gs`.
-4. Cambiar `APP_TOKEN = 'CAMBIA_ESTE_TOKEN'` por una clave propia.
-5. Guardar.
-6. Ejecutar manualmente la función `setup` una vez.
-7. Autorizar permisos.
+## Instrucciones rápidas
 
-## 2. Desplegar Apps Script como Web App
+1. En Google Sheets, abre Extensiones > Apps Script.
+2. Reemplaza todo el contenido por el nuevo `Code.gs`.
+3. Ejecuta `setup` solo si necesitas crear o reiniciar la hoja `Registros`.
+4. Implementa nuevamente como Aplicación web.
+   - Ejecutar como: Yo.
+   - Quién tiene acceso: Cualquier usuario.
+5. En GitHub Pages reemplaza:
+   - `index.html`
+   - `styles.css`
+   - `script.js`
+6. Abre la página y prueba guardar un servicio.
 
-1. En Apps Script, presionar Implementar → Nueva implementación.
-2. Tipo: Aplicación web.
-3. Ejecutar como: Yo.
-4. Quién tiene acceso: Cualquier usuario.
-5. Implementar.
-6. Copiar la URL terminada en `/exec`.
+## Seguridad
 
-## 3. Publicar en GitHub Pages
+Esta versión no usa token. Es más simple para el usuario, pero cualquier persona que conozca la URL del Apps Script podría intentar enviar datos a la hoja. Para piloto interno está bien, pero no debe usarse para datos sensibles.
 
-1. Crear un repositorio, por ejemplo `resumen-servicio-dipresec`.
-2. Subir `index.html`, `styles.css` y `script.js`.
-3. Activar GitHub Pages en Settings → Pages.
-4. Abrir el sitio publicado.
-5. En la sección Configuración, pegar:
-   - URL Web App de Apps Script.
-   - Token configurado en `Code.gs`.
-6. Guardar configuración.
+## Formato del resumen
 
-## 4. Uso diario
+El resumen se genera con estructura similar al ejemplo de Jacob:
 
-1. Seleccionar fecha, turno y encargado/a.
-2. Agregar ítems del resumen.
-3. Cargar registros para verificar.
-4. Generar resumen.
-5. Copiar texto, abrir WhatsApp o abrir Outlook.
-
-## Nota de seguridad
-
-Esta versión usa un token simple para evitar escrituras accidentales. No se recomienda guardar datos personales sensibles. Para producción se debería evaluar autenticación institucional.
+- Saludo inicial.
+- Introducción formal.
+- Servicio en conjunto a Carabineros.
+- Servicio "Plan Colegio".
+- Patrullajes solicitados.
+- Vigilancias especiales.
+- Servicios extraordinarios.
+- Móviles operativos para apoyo del turno.
+- Novedades.
+- Cierre con el nombre del encargado.
